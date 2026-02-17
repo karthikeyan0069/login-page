@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colorful Auth System</title>
+
+<style>
+
+/* ===== BACKGROUND ===== */
+body{
+    margin:0;
+    font-family:Segoe UI, sans-serif;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(135deg,#ff512f,#dd2476,#1fa2ff);
+    background-size:400% 400%;
+    animation:bg 10s infinite alternate;
+}
+
+@keyframes bg{
+    0%{background-position:left;}
+    100%{background-position:right;}
+}
+
+/* CARD */
+.card{
+    width:360px;
+    padding:30px;
+    border-radius:20px;
+    background:white;
+    box-shadow:0 15px 40px rgba(0,0,0,0.3);
+    text-align:center;
+}
+
+/* TABS */
+.tabs{
+    display:flex;
+    margin-bottom:20px;
+}
+
+.tabs button{
+    flex:1;
+    padding:10px;
+    border:none;
+    background:#eee;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.tabs .active{
+    background:#1fa2ff;
+    color:white;
+}
+
+/* INPUTS */
+input{
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+/* BUTTON */
+.btn{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#1fa2ff;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.btn:hover{
+    background:#0077ff;
+}
+
+/* PASSWORD STRENGTH */
+.strength{
+    font-size:13px;
+    text-align:left;
+}
+
+/* MESSAGE */
+.msg{
+    margin-top:10px;
+    font-weight:bold;
+}
+
+.success{color:green;}
+.error{color:red;}
+
+/* DASHBOARD */
+#dashboard{
+    display:none;
+}
+
+.logout{
+    margin-top:20px;
+    background:#ff4d4d;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<!-- AUTH AREA -->
+<div id="auth">
+
+<div class="tabs">
+<button id="loginTab" class="active" onclick="switchTab('login')">Login</button>
+<button id="registerTab" onclick="switchTab('register')">Register</button>
+</div>
+
+<!-- LOGIN -->
+<form id="loginForm">
+<input type="text" id="loginUser" placeholder="Username" required>
+<input type="password" id="loginPass" placeholder="Password" required>
+<button class="btn">Login</button>
+</form>
+
+<!-- REGISTER -->
+<form id="registerForm" style="display:none;">
+<input type="text" id="regUser" placeholder="Create Username" required>
+<input type="password" id="regPass" placeholder="Create Password"
+onkeyup="checkStrength()" required>
+
+<div id="strength" class="strength"></div>
+
+<button class="btn">Register</button>
+</form>
+
+<div id="message" class="msg"></div>
+
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+<h2>🎉 Welcome <span id="userDisplay"></span></h2>
+<p>You are successfully logged in.</p>
+<button class="btn logout" onclick="logout()">🚪 Logout</button>
+</div>
+
+</div>
+
+<script>
+
+/* USERS STORAGE */
+let users = JSON.parse(localStorage.getItem("users")) || [];
+
+/* SESSION CHECK */
+let loggedUser = localStorage.getItem("loggedUser");
+if(loggedUser){
+    showDashboard(loggedUser);
+}
+
+/* TAB SWITCH */
+function switchTab(type){
+    loginForm.style.display = type==="login"?"block":"none";
+    registerForm.style.display = type==="register"?"block":"none";
+
+    loginTab.classList.toggle("active",type==="login");
+    registerTab.classList.toggle("active",type==="register");
+}
+
+/* PASSWORD STRENGTH */
+function checkStrength(){
+    let pass = regPass.value;
+    let strength = document.getElementById("strength");
+
+    if(pass.length < 4){
+        strength.innerHTML="🔴 Weak Password";
+        strength.style.color="red";
+    }
+    else if(pass.match(/[A-Z]/) && pass.match(/[0-9]/)){
+        strength.innerHTML="🟢 Strong Password";
+        strength.style.color="green";
+    }
+    else{
+        strength.innerHTML="🟡 Medium Password";
+        strength.style.color="orange";
+    }
+}
+
+/* REGISTER */
+registerForm.addEventListener("submit",function(e){
+    e.preventDefault();
+
+    let username = regUser.value;
+    let password = regPass.value;
+
+    if(users.find(u=>u.username===username)){
+        showMsg("User already exists","error");
+        return;
+    }
+
+    users.push({username,password});
+    localStorage.setItem("users",JSON.stringify(users));
+
+    showMsg("✅ Registered Successfully","success");
+    registerForm.reset();
+    switchTab("login");
+});
+
+/* LOGIN */
+loginForm.addEventListener("submit",function(e){
+    e.preventDefault();
+
+    let user = users.find(u =>
+        u.username===loginUser.value &&
+        u.password===loginPass.value
+    );
+
+    if(user){
+        localStorage.setItem("loggedUser",user.username);
+        showDashboard(user.username);
+    }else{
+        showMsg("❌ Invalid Login","error");
+    }
+});
+
+/* DASHBOARD */
+function showDashboard(name){
+    auth.style.display="none";
+    dashboard.style.display="block";
+    userDisplay.innerText=name;
+}
+
+/* LOGOUT */
+function logout(){
+    localStorage.removeItem("loggedUser");
+    location.reload();
+}
+
+/* MESSAGE */
+function showMsg(text,type){
+    message.innerHTML=text;
+    message.className="msg "+type;
+}
+
+</script>
+
+</body>
+</html>
